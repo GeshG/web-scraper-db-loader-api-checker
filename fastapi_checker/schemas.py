@@ -4,9 +4,10 @@ from pydantic import BaseModel
 
 
 class News(BaseModel):
-    headline: str
-    link: str
-    datetime: str
+    Headline: str
+    Link: str
+    Date_Published: str
 
+    #don't think I will use ORM at this moment
     class Config:
         orm_mode = True
