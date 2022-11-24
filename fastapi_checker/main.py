@@ -25,34 +25,32 @@ def get_db():
 def home():
     return ('It\'s working')
 
+@app.get("/news/Headline", response_model=schemas.News)
+def read_headline(db: Session = Depends(get_db)):
+    get_headline = crud.get_news_headline(db=db)
+    return get_headline
 
-@app.get("/news/headline", response_model=list[schemas.News])
-def read_headline(skip: str = 0, limit: int = 100, db: Session = Depends(get_db)):
-    headlines = crud.get_news_headline(db, skip=skip, limit=limit)
-    return headlines
 
-
-@app.get("/news/link}", response_model=schemas.News)
-def read_link(links: str, db: Session = Depends(get_db)):
-    db_link = crud.get_news_link(db, link=links)
+@app.get("/news/Link", response_model=schemas.News)
+def read_link(db: Session = Depends(get_db)):
+    db_link = crud.get_news_link(db=db)
     if db_link is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Link not found")
     return db_link
 
 
-@app.get("/news/date_posted", response_model=list[schemas.News])
-def read_date_published(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    published_date = crud.get_date_published(db, skip=skip, limit=limit)
-    return published_date
+@app.get("/news/Date_Published", response_model=schemas.News)
+def read_date_published(db: Session = Depends(get_db)):
+    get_date_published = crud.get_date_published(db=db)
+    return get_date_published
 
+@app.get('/news', response_model=schemas.News)
+def get_all_newss(db: Session = Depends(get_db)):
+    get_all = crud.get_all_news(db=db)
+    return get_all
 
 @app.put('/news')
 def upload_news():
-    api_url = "sqlite:///./sql_app.db"
+    api_url = "sqlite:////Users/gginchev/Desktop/news.db"
     response = requests.get(api_url)
     response.json
-
-
-with open('/Users/gginchev/Downloads/Desktop - 21-10-2022/web-scraper-news/file.json.csv','r') as news_json:
-    data = json.load(news_json)
-
