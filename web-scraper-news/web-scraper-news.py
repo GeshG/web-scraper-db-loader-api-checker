@@ -1,47 +1,80 @@
 import json
 import requests
-import pandas as pd
+import logging
 import time
 import schedule
 from bs4 import BeautifulSoup
-import csv
+from datetime import datetime
 
-def news_info():
+
+class Index:
+    def __init__(self, index_fl): 
+        self.index_fl = index_fl
+        self.index_content = self.read()
+
+    def save(self):
+        with open(self.index_fl, "w") as fh:  
+            json.dump(self.index_content, fh)
+
+    def read(self):
+        try:
+            with open(self.index_fl, 'r') as fh:  
+                return json.load(fh) 
+        except FileNotFoundError: 
+            logging.warning('Index file does not exist. Will proceed with empty index')  
+            return {} 
+    
+    def add(self, val):
+        if val in self.index_content:  
+            return False
+        
+        self.index_content[val] = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+        return True
+
+
+def run():
+    
     url = 'https://novini.bg'
-    request = requests.get('https://novini.bg')
+    index = Index('scraper_index.json') 
+
+    logging.info('Start of downloading!') 
+    download_fl_name = 'articles_download_{date}.json'.format(date=datetime.now().strftime("%Y%m%d%H%M%S"))
+
+    request = requests.get(url) 
     soup = BeautifulSoup(request.text, 'html.parser')
     articles = soup.find_all('article', class_= 'g-grid__item js-content')
     art = []
+
     for article in articles:
         article_link = article.a.get('href')
         article_title = article.find('h2', {'class', 'g-grid__item-title'}).text
-        article_date = article.find('p', class_ = 'g-grid__item--time')
-        article_date = article_date.text if article_date else None
+        
+        
+        if not index.add(article_link):  
+
+            logging.info('This link has already been downloaded. Skipping!')
+            continue
 
         art.append({
             'Headline': article_title,
             'Link': article_link,
-            'Date Published': article_date
         })
-    df = pd.DataFrame(art)
-    df.to_csv('News_Bulgaria.csv', index=False)
+
+    if not art:   
+        logging.info('No new article was found.')
+        return
+    
+    with open(f'/Users/gginchev/Downloads/Desktop - 21-10-2022/downloaded_news/{download_fl_name}', 'w') as fh: 
+        json.dump(art, fh)
+    
+    index.save() 
+    logging.info('End of downloading!') 
+    
+schedule.every().day.at("11:44").do(run)
 
 
-    csvfile = open('News_Bulgaria.csv', 'r')
-    jsonfile = open('file.json', 'w')
-
-    fieldnames = ("Headline","Link","Date Posted")
-    reader = csv.DictReader( csvfile, fieldnames)
-    for row in reader:
-        json.dump(row, jsonfile)
-        jsonfile.write('\n')
-
-news_info()
-
-schedule.every().day.at("10:30").do(news_info)
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
-
-
+if __name__ == '__main__':
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG) 
+    while True:
+        schedule.run_pending()
+        time.sleep(10)
