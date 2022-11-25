@@ -39,18 +39,9 @@ def read_link(db: Session = Depends(get_db)):
     return db_link
 
 
-@app.get("/news/Date_Published", response_model=schemas.News)
-def read_date_published(db: Session = Depends(get_db)):
-    get_date_published = crud.get_date_published(db=db)
-    return get_date_published
-
-@app.get('/news', response_model=schemas.News)
+@app.get('/news', response_model=list[schemas.News])
 def get_all_newss(db: Session = Depends(get_db)):
     get_all = crud.get_all_news(db=db)
     return get_all
 
-@app.put('/news')
-def upload_news():
-    api_url = "sqlite:////Users/gginchev/Desktop/news.db"
-    response = requests.get(api_url)
-    response.json
+
